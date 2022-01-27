@@ -298,26 +298,27 @@ def viewSearch():
     if "ses_user" in session:
         user = session["ses_user"]
         cur = db.connection.cursor()
-        message = ''
-
-        if request.method == 'POST':
-            start = request.form['start']
-            destination = request.form['destination']
-            date = request.form["date"]
+        error = ""
+        searched_result = []
+        if request.method == "POST":
+            start_away = request.form["start"]
+            end_destination = request.form["end"]
+            date_start = request.form["date"]
+            start = f"%{start_away}%".upper()
+            end = f"%{end_destination}%".upper()
             cur.execute(
-                "select * from fahrt where  startort  like  %{start}%  and zielort like %{destination}% and date like %{date}%,")
+                f"select startort,zielort, fahrtkosten, fahrtdatumzeit, transportmittel.icon from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid  where upper(startort) like ? and upper(zielort) like ?",
+                (start, end)
+            )
             result = cur.fetchall()
-            founded_items = process.process_list(result)
-            print(founded_items)
-        else:
-            message = 'please input what you want to search'
+            searched_result = process.process_list(result)
 
         cur.close()
         del cur
-        return render_template('view_search.html', message=message, founded_items=founded_items, start=start,
-                               destination=destination)
+        return render_template('view_search.html', error=error, searched_result=searched_result)
+
     else:
-        redirect(url_for("login"))
+        return redirect(url_for("login"))
 
 
 @app.route('/bonus', methods=['GET', 'POST'])
@@ -328,7 +329,7 @@ def bonus():
         cur.execute(
             "select cast(avg(cast((bewertung.rating) as decimal(4,2))) as decimal(4,2)) as avgrating,bewertung.benutzer from bewertung join benutzer on benutzer.bid=bewertung.benutzer group by benutzer order by avgrating  desc fetch first 1 rows only")
         highest_rated_driver = cur.fetchone()
-        highest_rated_driver_list=process.make_single_list(highest_rated_driver)
+        highest_rated_driver_list = process.make_single_list(highest_rated_driver)
         if highest_rated_driver_list:
             cur.execute(
                 "select fahrt.fid, fahrt.startort, fahrt.zielort, benutzer.email, transportmittel.icon from fahrt join benutzer on fahrt.anbieter=benutzer.bid join transportmittel on fahrt.transportmittel=transportmittel.tid where fahrt.status='offen' and fahrt.anbieter=?",
