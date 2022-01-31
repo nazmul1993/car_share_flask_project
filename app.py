@@ -300,22 +300,26 @@ def viewSearch():
         cur = db.connection.cursor()
         error = ""
         searched_result = []
+
+
         if request.method == "POST":
             start_away = request.form["start"]
             end_destination = request.form["end"]
-            date_start = request.form["date"]
+            date= request.form["date"]
+            formated_date=f"{date}%"
             start = f"%{start_away}%".upper()
             end = f"%{end_destination}%".upper()
             cur.execute(
-                f"select startort,zielort, fahrtkosten, fahrtdatumzeit, transportmittel.icon from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid  where upper(startort) like ? and upper(zielort) like ?",
-                (start, end)
+                f"select startort,zielort, fahrtkosten, fahrtdatumzeit, transportmittel.icon from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid  where upper(startort) like ? and upper(zielort) like? and fahrtdatumzeit like ?",
+                (start, end,formated_date)
             )
             result = cur.fetchall()
             searched_result = process.process_list(result)
 
         cur.close()
         del cur
-        return render_template('view_search.html', error=error, searched_result=searched_result)
+        return render_template('view_search.html', error=error,
+                               searched_result=searched_result)
 
     else:
         return redirect(url_for("login"))
@@ -338,7 +342,7 @@ def bonus():
             bestRides_list = process.process_list(best_rides)
         cur.close()
         del cur
-        return render_template('bonus.html', best_rides=bestRides_list, highest_rated_driver=highest_rated_driver_list)
+        return render_template('bonus.html', best_rides=best_rides,bestRides_list=bestRides_list, highest_rated_driver=highest_rated_driver_list)
 
     else:
         return redirect(url_for("login"))
