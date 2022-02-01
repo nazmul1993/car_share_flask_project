@@ -96,11 +96,11 @@ def mainView():
         cur.execute(
             "select startort,zielort,status,fahrtkosten,transportmittel.icon,fid from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid where  maxPlaetze>0")
         result = cur.fetchall()
-        availabe_rides = process.process_list(result)
+        available_rides = process.process_list(result)
 
         cur.close()
         del cur
-        return render_template('main_view.html', booked_trips=booked_trips, availabe_rides=availabe_rides)
+        return render_template('main_view.html', booked_trips=booked_trips, availabe_rides=available_rides)
     else:
         return redirect(url_for("login"))
 
@@ -192,14 +192,14 @@ def viewDrive(fid):
             elif trip_details[6] != 'offen':
                 error = "This trip has been closed"
             elif seat not in (1, 2) and seat > int(trip_details[4]):
-                error = "Maximum 2 seats can be booked and you can't book more than the availabe seats"
+                error = "Maximum 2 seats can be booked and you can't book more than the available seats"
             elif len(already_booked) > 0:
-                error = 'Multipule bookings for same trip is not allowed'
+                error = 'Multiple bookings for same trip is not allowed'
             else:
                 cur.execute('insert into reservieren (kunde, fahrt, anzPlaetze) values (?,?,?)', (user[0], fid, seat))
                 if cur.rowcount > 0:
                     error = ''
-                    success = 'Booking Successfull'
+                    success = 'Booking Successful'
                 else:
                     error = 'Something went wrong. Booking failed'
 
@@ -300,25 +300,28 @@ def viewSearch():
         cur = db.connection.cursor()
         error = ""
         searched_result = []
-
+        searched = False
 
         if request.method == "POST":
             start_away = request.form["start"]
             end_destination = request.form["end"]
-            date= request.form["date"]
-            formated_date=f"{date}%"
-            start = f"%{start_away}%".upper()
-            end = f"%{end_destination}%".upper()
-            cur.execute(
-                f"select startort,zielort, fahrtkosten, fahrtdatumzeit, transportmittel.icon from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid  where upper(startort) like ? and upper(zielort) like? and fahrtdatumzeit like ?",
-                (start, end,formated_date)
-            )
-            result = cur.fetchall()
-            searched_result = process.process_list(result)
-
+            date = request.form["date"]
+            if start_away or end_destination or date:
+                searched = True
+                formated_date = f"{date}%"
+                start = f"%{start_away}%".upper()
+                end = f"%{end_destination}%".upper()
+                cur.execute(
+                    f"select startort,zielort, fahrtkosten, fahrtdatumzeit, transportmittel.icon from fahrt join transportmittel on fahrt.transportmittel = transportmittel.tid  where upper(startort) like ? and upper(zielort) like? and fahrtdatumzeit like ?",
+                    (start, end, formated_date)
+                )
+                result = cur.fetchall()
+                searched_result = process.process_list(result)
+            else:
+                error = 'Please write something to search'
         cur.close()
         del cur
-        return render_template('view_search.html', error=error,
+        return render_template('view_search.html', error=error, searched=searched,
                                searched_result=searched_result)
 
     else:
@@ -342,7 +345,8 @@ def bonus():
             bestRides_list = process.process_list(best_rides)
         cur.close()
         del cur
-        return render_template('bonus.html', best_rides=best_rides,bestRides_list=bestRides_list, highest_rated_driver=highest_rated_driver_list)
+        return render_template('bonus.html', best_rides=best_rides, bestRides_list=bestRides_list,
+                               highest_rated_driver=highest_rated_driver_list)
 
     else:
         return redirect(url_for("login"))
