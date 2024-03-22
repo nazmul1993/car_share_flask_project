@@ -68,7 +68,7 @@ def register():
         result = cur.fetchall()
 
         if result:
-            message = 'You are already registered to our site'
+            message = 'You are already registered to our site so dont need to register again'
         else:
             cur.execute("insert into benutzer (email, name) values (?,?)", (email, name,))
             return redirect(url_for("login"))
