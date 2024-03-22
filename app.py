@@ -140,7 +140,7 @@ def newDrive():
                 message = ['All asterisk (*) fileds and required',
                            'The allowed value for Maximum Capacity is between 1 and 10',
                            'Cost have to be a greater than 0',
-                           'Length of description can not be greater than 50']
+                           'Length of description can not be greater than 60']
         cur.close()
         del cur
         return render_template('new_drive.html', message=message)
